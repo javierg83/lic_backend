@@ -1,0 +1,12 @@
+# Framework principal y Servidor
+fastapi
+uvicorn[standard]
+
+# Seguridad y JWT
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# Utilidades (opcional pero recomendado)
+pydantic-settings
+python-dotenv
