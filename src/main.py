@@ -1,12 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.responses import RedirectResponse
 
-from src.api.user_auth import router as auth_router
-from src.api.home import router as main_router
+from src.features.auth.router import router as auth_router
+from src.features.home.router import router as main_router
+from src.core.responses import ApiResponse
 
 app = FastAPI()
 
@@ -35,11 +34,43 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(main_router, prefix="/main", tags=["Main"])
 
-from src.api.demo.routes import router as demo_router
+from src.features.demo.router import router as demo_router
 app.include_router(demo_router, prefix="/demo", tags=["Demo"])
 
+"""
+# para generar seguridad
+
+from src.features.auth.dependencies import auth_required
+
+app.include_router(
+    demo_router, 
+    prefix="/demo", 
+    tags=["Demo"], 
+    dependencies=[Depends(auth_required)] # <--- Aquí
+)
+"""
+
+
 @app.exception_handler(StarletteHTTPException)
-async def custom_http_exception_handler(request, exc):
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404 and request.method == "GET":
         return RedirectResponse(url="/main")
-    raise exc
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ApiResponse.fail(
+            message=str(exc.detail),
+            error=f"HTTP {exc.status_code}"
+        ).model_dump()
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content=ApiResponse.fail(
+            message="Error interno del servidor",
+            error=str(exc)
+        ).model_dump()
+    )
