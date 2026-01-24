@@ -32,7 +32,10 @@ app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(main_router, prefix="/main", tags=["Main"])
 
 from src.features.demo.router import router as demo_router
+from src.features.licitaciones.router import router as licitaciones_router
+
 app.include_router(demo_router, prefix="/demo", tags=["Demo"])
+app.include_router(licitaciones_router, prefix="/licitaciones", tags=["Licitaciones"])
 
 """
 # para generar seguridad
