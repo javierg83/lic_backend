@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from .actions.show.router import router as show_router
-from .actions.list.router import router as list_router
-from .actions.new.router import router as new_router
+from .actions.show.controller import router as show_router
+from .actions.list.controller import router as list_router
+from .actions.new.controller import router as new_router
 
 router = APIRouter()
 

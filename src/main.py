@@ -3,14 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.features.auth.router import router as auth_router
-from src.features.home.router import router as main_router
+from src.features.auth.controller import router as auth_router
+from src.features.home.controller import router as main_router
 from src.core.responses import ApiResponse
 
 app = FastAPI()
-
-print('entro aca')
-
 
 # 🔥 Redirect global REAL
 @app.get("/")
