@@ -43,8 +43,9 @@ class LicitacionShowService:
             )
 
         except Exception as e:
+            print(f"ERROR LicitacionShowService: {str(e)}")
             return ApiResponse.fail(
-                message="Error al obtener la licitación de la base de datos",
+                message="No se pudo cargar la información de la licitación seleccionada.",
                 error=str(e)
             )
         finally:

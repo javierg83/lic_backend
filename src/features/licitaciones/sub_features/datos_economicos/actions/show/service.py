@@ -43,8 +43,9 @@ class DatosEconomicosShowService:
             )
 
         except Exception as e:
+            print(f"ERROR DatosEconomicosShowService: {str(e)}")
             return ApiResponse.fail(
-                message=f"Error al obtener los datos económicos: {str(e)}",
+                message="No se pudieron cargar los detalles financieros.",
                 error=str(e)
             )
         finally:

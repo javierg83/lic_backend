@@ -33,8 +33,9 @@ class LicitacionListService:
             )
 
         except Exception as e:
+            print(f"ERROR LicitacionListService: {str(e)}")
             return ApiResponse.fail(
-                message="Error al obtener las licitaciones de la base de datos",
+                message="No se pudo obtener el listado de licitaciones. Por favor, reintente más tarde.",
                 error=str(e)
             )
         finally:

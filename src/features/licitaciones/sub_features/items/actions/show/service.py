@@ -84,8 +84,9 @@ class ItemsLicitacionShowService:
             )
 
         except Exception as e:
+            print(f"ERROR ItemsLicitacionShowService: {str(e)}")
             return ApiResponse.fail(
-                message=f"Error al obtener los ítems: {str(e)}",
+                message="No se pudieron cargar los ítems. Por favor, reintente más tarde.",
                 error=str(e)
             )
         finally:
