@@ -1,0 +1,16 @@
+Table: items_licitacion
+id uuid DEFAULT gen_random_uuid() NOT NULL
+licitacion_id text NOT NULL
+semantic_run_id uuid NOT NULL
+item_key text
+nombre_item text
+cantidad numeric
+unidad text
+descripcion text
+observaciones text
+fuente_resumen text
+created_at timestamp with time zone DEFAULT now()
+incompleto boolean DEFAULT false
+incompleto_motivos text[]
+tiene_descripcion_tecnica boolean DEFAULT false
+archivo_origen_id uuid
