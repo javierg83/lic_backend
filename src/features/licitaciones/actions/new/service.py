@@ -4,6 +4,10 @@ from typing import List
 from fastapi import UploadFile
 from src.core.database import Database
 from src.core.responses import ApiResponse
+from src.core.config import REDIS_HOST, REDIS_PORT, REDIS_USERNAME, REDIS_PASSWORD, REDIS_DB
+import redis
+import json
+from datetime import datetime
 from .schemas import LicitacionNewResponse, FileValidationResult
 
 class LicitacionNewService:
@@ -88,6 +92,25 @@ class LicitacionNewService:
                             (i + 1, licitacion_id, file_data["filename"], file_path, file_data["content_type"], file_data["size"], file_data["hash"])
                         )
             
+            # Notificar al Worker via Redis
+            try:
+                r = redis.Redis(
+                    host=REDIS_HOST,
+                    port=int(REDIS_PORT),
+                    username=REDIS_USERNAME,
+                    password=REDIS_PASSWORD,
+                    db=int(REDIS_DB),
+                    decode_responses=True
+                )
+                queue_data = {
+                    "licitacion_id": licitacion_id,
+                    "timestamp": datetime.now().isoformat()
+                }
+                r.lpush("document_queue", json.dumps(queue_data))
+                print(f"📢 Mensaje enviado a Redis para Licitación ID: {licitacion_id}")
+            except Exception as redis_err:
+                print(f"⚠️ Error al notificar a Redis: {redis_err}")
+
             return ApiResponse.ok(
                 data=LicitacionNewResponse(id=licitacion_id, nombre=nombre, archivos_procesados=validation_results),
                 message="Licitación creada exitosamente"
