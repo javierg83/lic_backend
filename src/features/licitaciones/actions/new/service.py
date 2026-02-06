@@ -86,10 +86,10 @@ class LicitacionNewService:
                         cur.execute(
                             """
                             INSERT INTO licitacion_archivos 
-                            (id_interno, licitacion_id, nombre_archivo_org, ruta_almacenamiento, tipo_contenido, peso_bytes, hash_md5)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            (licitacion_id, nombre_archivo_org, ruta_almacenamiento, tipo_contenido, peso_bytes, hash_md5)
+                            VALUES (%s, %s, %s, %s, %s, %s)
                             """,
-                            (i + 1, licitacion_id, file_data["filename"], file_path, file_data["content_type"], file_data["size"], file_data["hash"])
+                            (licitacion_id, file_data["filename"], file_path, file_data["content_type"], file_data["size"], file_data["hash"])
                         )
             
             # Notificar al Worker via Redis
