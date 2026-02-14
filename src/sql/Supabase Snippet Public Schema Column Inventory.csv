@@ -1,0 +1,143 @@
+table_name,column_name,data_type,is_nullable,column_default
+candidatos_homologacion,id,uuid,NO,gen_random_uuid()
+candidatos_homologacion,homologacion_id,uuid,NO,null
+candidatos_homologacion,ranking,integer,NO,null
+candidatos_homologacion,producto_codigo,text,NO,null
+candidatos_homologacion,producto_nombre,text,NO,null
+candidatos_homologacion,producto_descripcion,text,YES,null
+candidatos_homologacion,stock_disponible,integer,YES,null
+candidatos_homologacion,ubicacion_stock,text,YES,null
+candidatos_homologacion,score_similitud,double precision,NO,null
+candidatos_homologacion,razonamiento,text,YES,null
+documentos,id,uuid,NO,gen_random_uuid()
+documentos,licitacion_id,uuid,NO,null
+documentos,nombre_archivo,text,NO,null
+documentos,tipo_documento,text,YES,null
+documentos,total_paginas,integer,YES,null
+documentos,hash_archivo,text,YES,null
+documentos,creado_en,timestamp with time zone,NO,now()
+finanzas_garantias,id,uuid,NO,gen_random_uuid()
+finanzas_garantias,finanzas_licitacion_id,uuid,NO,null
+finanzas_garantias,tipo,text,NO,null
+finanzas_garantias,monto,numeric,YES,null
+finanzas_garantias,moneda,text,YES,null
+finanzas_garantias,vigencia,text,YES,null
+finanzas_garantias,descripcion,text,YES,null
+finanzas_licitacion,id,uuid,NO,gen_random_uuid()
+finanzas_licitacion,licitacion_id,uuid,NO,null
+finanzas_licitacion,presupuesto_referencial,numeric,YES,null
+finanzas_licitacion,moneda,text,YES,null
+finanzas_licitacion,forma_pago,text,YES,null
+finanzas_licitacion,plazo_pago,text,YES,null
+finanzas_licitacion,fuente_financiamiento,text,YES,null
+finanzas_licitacion,observaciones,text,YES,null
+finanzas_licitacion,fecha_extraccion,timestamp with time zone,NO,now()
+finanzas_licitacion,garantias,text,YES,null
+finanzas_licitacion,multas,text,YES,null
+finanzas_licitacion,otros,text,YES,null
+finanzas_licitacion,resumen,text,YES,null
+finanzas_licitacion,updated_at,timestamp without time zone,YES,now()
+finanzas_licitacion,archivo_origen_id,uuid,YES,null
+finanzas_multas,id,uuid,NO,gen_random_uuid()
+finanzas_multas,finanzas_licitacion_id,uuid,NO,null
+finanzas_multas,descripcion,text,NO,null
+finanzas_multas,monto,numeric,YES,null
+finanzas_multas,moneda,text,YES,null
+finanzas_multas,condicion_aplicacion,text,YES,null
+homologaciones_productos,id,uuid,NO,gen_random_uuid()
+homologaciones_productos,licitacion_id,uuid,NO,null
+homologaciones_productos,item_key,text,NO,null
+homologaciones_productos,descripcion_detectada,text,NO,null
+homologaciones_productos,razonamiento_general,text,YES,null
+homologaciones_productos,tokens_input,integer,YES,null
+homologaciones_productos,tokens_output,integer,YES,null
+homologaciones_productos,tokens_total,integer,YES,null
+homologaciones_productos,modelo_usado,text,YES,null
+homologaciones_productos,fecha_homologacion,timestamp with time zone,NO,now()
+item_especificaciones,id,uuid,NO,gen_random_uuid()
+item_especificaciones,item_id,uuid,NO,null
+item_especificaciones,especificacion,text,NO,null
+item_especificaciones,creado_en,timestamp with time zone,NO,now()
+item_evidences,id,uuid,NO,gen_random_uuid()
+item_evidences,item_id,uuid,NO,null
+item_evidences,evidence_id,uuid,NO,null
+item_evidences,creado_en,timestamp with time zone,NO,now()
+item_licitacion_especificaciones,id,uuid,NO,gen_random_uuid()
+item_licitacion_especificaciones,semantic_run_id,uuid,NO,null
+item_licitacion_especificaciones,item_id,uuid,NO,null
+item_licitacion_especificaciones,especificacion,text,NO,null
+item_licitacion_especificaciones,created_at,timestamp with time zone,YES,now()
+items_licitacion,id,uuid,NO,gen_random_uuid()
+items_licitacion,licitacion_id,text,NO,null
+items_licitacion,semantic_run_id,uuid,NO,null
+items_licitacion,item_key,text,YES,null
+items_licitacion,nombre_item,text,YES,null
+items_licitacion,cantidad,numeric,YES,null
+items_licitacion,unidad,text,YES,null
+items_licitacion,descripcion,text,YES,null
+items_licitacion,observaciones,text,YES,null
+items_licitacion,fuente_resumen,text,YES,null
+items_licitacion,created_at,timestamp with time zone,YES,now()
+items_licitacion,incompleto,boolean,YES,false
+items_licitacion,incompleto_motivos,ARRAY,YES,null
+items_licitacion,tiene_descripcion_tecnica,boolean,YES,false
+items_licitacion,archivo_origen_id,uuid,YES,null
+items_licitados,id,uuid,NO,gen_random_uuid()
+items_licitados,licitacion_id,uuid,NO,null
+items_licitados,semantic_run_id,uuid,NO,null
+items_licitados,nombre_item,text,NO,null
+items_licitados,cantidad,numeric,YES,null
+items_licitados,unidad,text,YES,null
+items_licitados,descripcion,text,YES,null
+items_licitados,observaciones,text,YES,null
+items_licitados,fuente_resumen,text,YES,null
+items_licitados,creado_en,timestamp with time zone,NO,now()
+licitacion_archivos,id,uuid,NO,gen_random_uuid()
+licitacion_archivos,id_interno,bigint,NO,null
+licitacion_archivos,licitacion_id,uuid,NO,null
+licitacion_archivos,nombre_archivo_org,text,NO,null
+licitacion_archivos,ruta_almacenamiento,text,YES,null
+licitacion_archivos,tipo_contenido,text,YES,null
+licitacion_archivos,peso_bytes,bigint,YES,null
+licitacion_archivos,hash_md5,text,YES,null
+licitacion_archivos,clasificacion_archivo,text,YES,null
+licitacion_archivos,estado_procesamiento,text,YES,'PENDIENTE'::text
+licitacion_archivos,estado_embedding,boolean,YES,false
+licitacion_archivos,id_job_procesamiento,text,YES,null
+licitacion_archivos,mensaje_error,text,YES,null
+licitacion_archivos,fecha_subida,timestamp without time zone,YES,CURRENT_TIMESTAMP
+licitacion_archivos,fecha_procesado,timestamp without time zone,YES,null
+licitacion_archivos,obsoleto,boolean,YES,false
+licitaciones,id,uuid,NO,gen_random_uuid()
+licitaciones,codigo_licitacion,text,YES,null
+licitaciones,nombre,text,YES,null
+licitaciones,descripcion,text,YES,null
+licitaciones,fecha_carga,timestamp with time zone,NO,now()
+licitaciones,estado,text,NO,'ACTIVA'::text
+licitaciones,tenant_id,uuid,YES,null
+licitaciones,organismo_solicitante,text,YES,null
+semantic_evidences,id,uuid,NO,gen_random_uuid()
+semantic_evidences,semantic_run_id,uuid,NO,null
+semantic_evidences,redis_key,text,NO,null
+semantic_evidences,documento_id,uuid,YES,null
+semantic_evidences,pagina,integer,YES,null
+semantic_evidences,score_similitud,numeric,YES,null
+semantic_evidences,texto_fragmento,text,NO,null
+semantic_evidences,creado_en,timestamp with time zone,NO,now()
+semantic_results,id,uuid,NO,gen_random_uuid()
+semantic_results,semantic_run_id,uuid,NO,null
+semantic_results,concepto,text,NO,null
+semantic_results,resultado_json,jsonb,NO,null
+semantic_results,confianza_global,numeric,YES,null
+semantic_results,creado_en,timestamp with time zone,NO,now()
+semantic_runs,id,uuid,NO,gen_random_uuid()
+semantic_runs,licitacion_id,uuid,NO,null
+semantic_runs,concepto,text,NO,null
+semantic_runs,is_current,boolean,NO,true
+semantic_runs,estado,text,NO,'OK'::text
+semantic_runs,mensaje_error,text,YES,null
+semantic_runs,prompt_version,text,YES,null
+semantic_runs,extractor_version,text,YES,null
+semantic_runs,top_k,integer,YES,null
+semantic_runs,min_score,numeric,YES,null
+semantic_runs,creado_en,timestamp with time zone,NO,now()
