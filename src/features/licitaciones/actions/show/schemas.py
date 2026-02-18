@@ -11,5 +11,6 @@ class LicitacionShowResponse(BaseModel):
     organismo: Optional[str] = None
     unidad_solicitante: Optional[str] = None
     descripcion: Optional[str] = None
+    estado_publicacion: Optional[str] = None
     estado: Optional[str] = None
     fecha_carga: datetime

@@ -8,6 +8,7 @@ class LicitacionListItem(BaseModel):
     id_interno: Optional[int] = None
     nombre: Optional[str] = None
     estado: Optional[str] = None
+    estado_publicacion: Optional[str] = None
     fecha_carga: datetime
 
 class LicitacionListResponse(BaseModel):

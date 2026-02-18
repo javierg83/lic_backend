@@ -12,7 +12,7 @@ class LicitacionShowService:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT id, codigo_licitacion, nombre, organismo_solicitante, NULL as unidad_solicitante, descripcion, estado, fecha_carga, id_interno
+                        SELECT id, codigo_licitacion, nombre, organismo_solicitante, NULL as unidad_solicitante, descripcion, estado, fecha_carga, id_interno, estado_publicacion
                         FROM licitaciones 
                         WHERE id = %s
                         """,
@@ -35,7 +35,8 @@ class LicitacionShowService:
                         descripcion=row[5],
                         estado=row[6],
                         fecha_carga=row[7],
-                        id_interno=row[8]
+                        id_interno=row[8],
+                        estado_publicacion=row[9]
                     )
             
             return ApiResponse.ok(
