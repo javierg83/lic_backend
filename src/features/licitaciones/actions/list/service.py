@@ -11,7 +11,7 @@ class LicitacionListService:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT id, nombre, estado, fecha_carga 
+                        SELECT id, nombre, estado, fecha_carga, id_interno
                         FROM licitaciones 
                         ORDER BY fecha_carga DESC
                         """
@@ -23,7 +23,8 @@ class LicitacionListService:
                             id=row[0],
                             nombre=row[1],
                             estado=row[2],
-                            fecha_carga=row[3]
+                            fecha_carga=row[3],
+                            id_interno=row[4]
                         ) for row in rows
                     ]
             

@@ -5,6 +5,7 @@ from uuid import UUID
 
 class LicitacionShowResponse(BaseModel):
     id: UUID
+    id_interno: Optional[int] = None
     codigo: Optional[str] = None
     titulo: Optional[str] = None
     organismo: Optional[str] = None

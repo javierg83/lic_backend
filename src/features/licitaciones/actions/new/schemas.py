@@ -9,5 +9,6 @@ class FileValidationResult(BaseModel):
 
 class LicitacionNewResponse(BaseModel):
     id: Optional[UUID] = None
+    id_interno: Optional[int] = None
     nombre: str
     archivos_procesados: List[FileValidationResult]

@@ -7,8 +7,10 @@ from src.core.responses import ApiResponse
 from src.core.config import REDIS_HOST, REDIS_PORT, REDIS_USERNAME, REDIS_PASSWORD, REDIS_DB
 import redis
 import json
+import traceback
 from datetime import datetime
 from .schemas import LicitacionNewResponse, FileValidationResult
+from src.constants.states import FileStatus
 
 class LicitacionNewService:
     @staticmethod
@@ -70,13 +72,16 @@ class LicitacionNewService:
                 with conn.cursor() as cur:
                     # Insert Licitacion
                     cur.execute(
-                        "INSERT INTO licitaciones (nombre) VALUES (%s) RETURNING id",
+                        "INSERT INTO licitaciones (nombre, estado) VALUES (%s, 'PENDIENTE') RETURNING id, id_interno",
                         (nombre,)
                     )
-                    licitacion_id = cur.fetchone()[0]
+                    row = cur.fetchone()
+                    licitacion_id = row[0]
+                    licitacion_id_interno = row[1]
 
                     # Insert Files
                     for i, file_data in enumerate(valid_files_data):
+                        # ... (rest of the loop)
                         file_path = os.path.join(storage_path, f"{licitacion_id}_{file_data['filename']}")
                         
                         # Save to disk
@@ -86,10 +91,10 @@ class LicitacionNewService:
                         cur.execute(
                             """
                             INSERT INTO licitacion_archivos 
-                            (licitacion_id, nombre_archivo_org, ruta_almacenamiento, tipo_contenido, peso_bytes, hash_md5)
-                            VALUES (%s, %s, %s, %s, %s, %s)
+                            (licitacion_id, nombre_archivo_org, ruta_almacenamiento, tipo_contenido, peso_bytes, hash_md5, estado_procesamiento)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
                             """,
-                            (licitacion_id, file_data["filename"], file_path, file_data["content_type"], file_data["size"], file_data["hash"])
+                            (licitacion_id, file_data["filename"], file_path, file_data["content_type"], file_data["size"], file_data["hash"], FileStatus.PENDIENTE)
                         )
             
             # Notificar al Worker via Redis
@@ -110,14 +115,18 @@ class LicitacionNewService:
                 print(f"📢 Mensaje enviado a Redis para Licitación ID: {licitacion_id}")
             except Exception as redis_err:
                 print(f"⚠️ Error al notificar a Redis: {redis_err}")
+                traceback.print_exc()
 
             return ApiResponse.ok(
-                data=LicitacionNewResponse(id=licitacion_id, nombre=nombre, archivos_procesados=validation_results),
+                data=LicitacionNewResponse(id=licitacion_id, id_interno=licitacion_id_interno, nombre=nombre, archivos_procesados=validation_results),
                 message="Licitación creada exitosamente"
             )
 
         except Exception as e:
             # Cleanup files on disk if DB fails? (Optional, here focusing on transaction)
+            print("❌ Error CRITICO en LicitacionNewService:")
+            print(f"Error: {e}")
+            traceback.print_exc()
             return ApiResponse.fail(
                 message="Error al guardar la licitación en la base de datos",
                 error=str(e)

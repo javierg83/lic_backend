@@ -5,8 +5,9 @@ from uuid import UUID
 
 class LicitacionListItem(BaseModel):
     id: UUID
+    id_interno: Optional[int] = None
     nombre: Optional[str] = None
-    estado: str
+    estado: Optional[str] = None
     fecha_carga: datetime
 
 class LicitacionListResponse(BaseModel):
