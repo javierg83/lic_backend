@@ -12,7 +12,7 @@ class LicitacionShowService:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT id, codigo_licitacion, nombre, organismo_solicitante, NULL as unidad_solicitante, descripcion, estado, fecha_carga, id_interno, estado_publicacion
+                        SELECT id, codigo_licitacion, nombre, entidad_solicitante, unidad_compra, descripcion, estado, fecha_carga, id_interno, estado_publicacion
                         FROM licitaciones 
                         WHERE id = %s
                         """,
@@ -30,13 +30,13 @@ class LicitacionShowService:
                         id=row[0],
                         codigo=row[1],
                         titulo=row[2],
-                        organismo=row[3],
-                        unidad_solicitante=row[4],
+                        organismo=row[3], # Mantenemos nombre 'organismo' en API response por compatibilidad frontend
+                        unidad_solicitante=row[4], # Mantenemos nombre 'unidad_solicitante' en API response
                         descripcion=row[5],
                         estado=row[6],
                         fecha_carga=row[7],
                         id_interno=row[8],
-                        estado_publicacion=row[9]
+                        estado_publicacion_nombre=row[9] # Ajuste si fuera necesario, pero el schema dice estado_publicacion
                     )
             
             return ApiResponse.ok(

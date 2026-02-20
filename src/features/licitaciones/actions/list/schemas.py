@@ -9,6 +9,8 @@ class LicitacionListItem(BaseModel):
     nombre: Optional[str] = None
     estado: Optional[str] = None
     estado_publicacion: Optional[str] = None
+    presupuesto: Optional[float] = None
+    moneda: Optional[str] = None
     fecha_carga: datetime
 
 class LicitacionListResponse(BaseModel):

@@ -11,9 +11,18 @@ class LicitacionListService:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT id, nombre, estado, fecha_carga, id_interno, estado_publicacion
-                        FROM licitaciones 
-                        ORDER BY fecha_carga DESC
+                        SELECT 
+                            l.id, 
+                            l.nombre, 
+                            l.estado, 
+                            l.fecha_carga, 
+                            l.id_interno, 
+                            l.estado_publicacion,
+                            f.presupuesto_referencial,
+                            f.moneda
+                        FROM licitaciones l
+                        LEFT JOIN finanzas_licitacion f ON l.id = f.licitacion_id
+                        ORDER BY l.fecha_carga DESC
                         """
                     )
                     rows = cur.fetchall()
@@ -25,7 +34,9 @@ class LicitacionListService:
                             estado=row[2],
                             fecha_carga=row[3],
                             id_interno=row[4],
-                            estado_publicacion=row[5]
+                            estado_publicacion=row[5],
+                            presupuesto=float(row[6]) if row[6] is not None else None,
+                            moneda=row[7]
                         ) for row in rows
                     ]
             
