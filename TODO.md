@@ -7,3 +7,6 @@
 
 ## Centralización
 - [ ] **Librería Compartida**: Mover `states.py` y otras constantes a una librería pip instalable o submódulo git para evitar duplicación de código entre microservicios.
+
+## Funcionalidades Core
+- [ ] **Borrado Lógico de Licitaciones**: Implementar borrado lógico (e.g., campo `deleted_at` o `is_deleted`). El borrado **no debe ser a nivel de base de datos** (DELETE SQL); el registro debe mantenerse en la DB por integridad histórica, pero debe modificarse la lógica en el backend y frontend para que no sea visible en los formularios, listados ni detalles respectivos.

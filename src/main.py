@@ -53,8 +53,8 @@ app.include_router(
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    if exc.status_code == 404 and request.method == "GET":
-        return RedirectResponse(url="/main")
+    # if exc.status_code == 404 and request.method == "GET":
+    #     return RedirectResponse(url="/main")
     
     return JSONResponse(
         status_code=exc.status_code,
