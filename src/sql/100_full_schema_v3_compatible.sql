@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS public.licitaciones (
     forma_pago TEXT,
     plazo_pago TEXT,
     moneda TEXT,
-    presupuesto_maximo NUMERIC,
     estado TEXT DEFAULT 'ACTIVA',
     usuario TEXT,
     
