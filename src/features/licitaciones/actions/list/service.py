@@ -19,7 +19,9 @@ class LicitacionListService:
                             l.id_interno, 
                             l.estado_publicacion,
                             f.presupuesto_referencial,
-                            f.moneda
+                            f.moneda,
+                            (SELECT COUNT(id) FROM items_licitacion il WHERE il.licitacion_id = l.id) as cantidad_items,
+                            (SELECT COUNT(DISTINCT hp.item_key) FROM homologaciones_productos hp WHERE hp.licitacion_id = l.id AND hp.candidato_seleccionado_id IS NOT NULL) as cantidad_homologados
                         FROM licitaciones l
                         LEFT JOIN finanzas_licitacion f ON l.id = f.licitacion_id
                         ORDER BY l.fecha_carga DESC
@@ -27,8 +29,13 @@ class LicitacionListService:
                     )
                     rows = cur.fetchall()
                     
-                    licitaciones = [
-                        LicitacionListItem(
+                    licitaciones = []
+                    for row in rows:
+                        cantidad_items = row[8] or 0
+                        cantidad_homologados = row[9] or 0
+                        porcentaje_homologacion = round((cantidad_homologados / cantidad_items) * 100, 2) if cantidad_items > 0 else 0.0
+                        
+                        licitaciones.append(LicitacionListItem(
                             id=row[0],
                             nombre=row[1],
                             estado=row[2],
@@ -36,9 +43,11 @@ class LicitacionListService:
                             id_interno=row[4],
                             estado_publicacion=row[5],
                             presupuesto=float(row[6]) if row[6] is not None else None,
-                            moneda=row[7]
-                        ) for row in rows
-                    ]
+                            moneda=row[7],
+                            cantidad_items=cantidad_items,
+                            cantidad_homologados=cantidad_homologados,
+                            porcentaje_homologacion=porcentaje_homologacion
+                        ))
             
             return ApiResponse.ok(
                 data=LicitacionListResponse(licitaciones=licitaciones),

@@ -21,7 +21,12 @@ class ResultadoHomologacion(BaseModel):
     nombre_item: str
     cantidad: Optional[float] = None
     descripcion_detectada: Optional[str] = None
+    candidato_seleccionado_id: Optional[str] = None
     candidatos: List[CandidatoHomologacion]
 
 class HomologacionesResponse(BaseModel):
     homologaciones: List[ResultadoHomologacion]
+
+class GuardarHomologacionRequest(BaseModel):
+    selecciones: dict[str, Optional[str]]
+

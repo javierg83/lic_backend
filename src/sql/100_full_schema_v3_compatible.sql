@@ -256,6 +256,7 @@ CREATE TABLE IF NOT EXISTS public.homologaciones_productos (
     modelo_usado TEXT,
     fecha_homologacion TIMESTAMPTZ DEFAULT now(),
     descripcion_detectada TEXT, -- Usado en licitacion_service.py
+    candidato_seleccionado_id UUID REFERENCES public.candidatos_homologacion(id) ON DELETE SET NULL,
     
     obsoleto BOOLEAN DEFAULT FALSE
 );

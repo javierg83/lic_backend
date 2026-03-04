@@ -2,7 +2,7 @@ from uuid import UUID
 from psycopg2.extras import RealDictCursor
 from src.core.database import Database
 from src.core.responses import ApiResponse
-from .schemas import HomologacionesResponse, ResultadoHomologacion, CandidatoHomologacion, ProductoHomologado
+from .schemas import HomologacionesResponse, ResultadoHomologacion, CandidatoHomologacion, ProductoHomologado, GuardarHomologacionRequest
 
 class HomologacionesService:
     @staticmethod
@@ -15,6 +15,7 @@ class HomologacionesService:
                         """
                         SELECT
                             hp.id AS homologacion_id,
+                            hp.candidato_seleccionado_id,
                             hp.item_key,
                             hp.descripcion_detectada,
                             il.nombre_item,
@@ -62,6 +63,7 @@ class HomologacionesService:
                         nombre_item=nombre_item,
                         cantidad=r["cantidad"],
                         descripcion_detectada=r["descripcion_detectada"],
+                        candidato_seleccionado_id=str(r["candidato_seleccionado_id"]) if r["candidato_seleccionado_id"] else None,
                         candidatos=[]
                     )
 
@@ -89,6 +91,48 @@ class HomologacionesService:
             print(f"ERROR HomologacionesService: {str(e)}")
             return ApiResponse.fail(
                 message="Error interno al consultar las homologaciones.",
+                error=str(e)
+            )
+        finally:
+            conn.close()
+
+class HomologacionesSaveService:
+    @staticmethod
+    async def process(licitacion_id: UUID, req: GuardarHomologacionRequest) -> ApiResponse[None]:
+        conn = Database.get_connection()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    for homologacion_id_str, candidato_codigo in req.selecciones.items():
+                        if candidato_codigo:
+                            # Buscar primero el UUID del candidato usando el codigo de producto
+                            cur.execute(
+                                """
+                                SELECT id FROM candidatos_homologacion 
+                                WHERE homologacion_id = %s AND producto_codigo = %s
+                                LIMIT 1
+                                """,
+                                (homologacion_id_str, candidato_codigo)
+                            )
+                            row = cur.fetchone()
+                            if row:
+                                candidato_id = row[0]
+                                cur.execute(
+                                    "UPDATE homologaciones_productos SET candidato_seleccionado_id = %s WHERE id = %s",
+                                    (candidato_id, homologacion_id_str)
+                                )
+                        else:
+                            # Caso desmarcar o null
+                            cur.execute(
+                                "UPDATE homologaciones_productos SET candidato_seleccionado_id = NULL WHERE id = %s",
+                                (homologacion_id_str,)
+                            )
+            return ApiResponse.ok(message="Selecciones guardadas correctamente", data=None)
+
+        except Exception as e:
+            print(f"ERROR HomologacionesSaveService: {str(e)}")
+            return ApiResponse.fail(
+                message="Error interno al guardar las homologaciones.",
                 error=str(e)
             )
         finally:

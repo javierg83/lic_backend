@@ -12,6 +12,9 @@ class LicitacionListItem(BaseModel):
     presupuesto: Optional[float] = None
     moneda: Optional[str] = None
     fecha_carga: datetime
+    cantidad_items: Optional[int] = 0
+    cantidad_homologados: Optional[int] = 0
+    porcentaje_homologacion: Optional[float] = 0.0
 
 class LicitacionListResponse(BaseModel):
     licitaciones: List[LicitacionListItem]
