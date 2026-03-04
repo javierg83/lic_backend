@@ -19,7 +19,7 @@ class ResultadoHomologacion(BaseModel):
     homologacion_id: str
     item_key: str
     nombre_item: str
-    cantidad: Optional[int] = None
+    cantidad: Optional[float] = None
     descripcion_detectada: Optional[str] = None
     candidatos: List[CandidatoHomologacion]
 

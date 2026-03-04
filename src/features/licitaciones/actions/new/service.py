@@ -15,10 +15,12 @@ from src.constants.states import FileStatus
 class LicitacionNewService:
     @staticmethod
     async def process(nombre: str, files: List[UploadFile]) -> ApiResponse[LicitacionNewResponse]:
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
         storage_path = os.getenv("FILE_STORAGE", "storage")
         max_size_mb = int(os.getenv("FILE_MAX_SIZE", "1"))
         max_size_bytes = max_size_mb * 1024 * 1024
-        allowed_extensions = os.getenv("FILE_EXTENSION", ".pdf,.word,.txt").lower().split(",")
+        allowed_extensions = os.getenv("FILE_EXTENSION", ".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv").lower().split(",")
         
         if not os.path.exists(storage_path):
             os.makedirs(storage_path)
