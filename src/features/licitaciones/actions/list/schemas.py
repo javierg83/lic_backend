@@ -15,6 +15,7 @@ class LicitacionListItem(BaseModel):
     cantidad_items: Optional[int] = 0
     cantidad_homologados: Optional[int] = 0
     porcentaje_homologacion: Optional[float] = 0.0
+    tipo_licitacion: Optional[str] = None
 
 class LicitacionListResponse(BaseModel):
     licitaciones: List[LicitacionListItem]

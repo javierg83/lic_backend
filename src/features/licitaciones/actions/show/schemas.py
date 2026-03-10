@@ -13,4 +13,5 @@ class LicitacionShowResponse(BaseModel):
     descripcion: Optional[str] = None
     estado_publicacion: Optional[str] = None
     estado: Optional[str] = None
+    tipo_licitacion: Optional[str] = None
     fecha_carga: datetime

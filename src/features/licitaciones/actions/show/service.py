@@ -12,7 +12,7 @@ class LicitacionShowService:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT id, codigo_licitacion, nombre, entidad_solicitante, unidad_compra, descripcion, estado, fecha_carga, id_interno, estado_publicacion
+                        SELECT id, codigo_licitacion, nombre, entidad_solicitante, unidad_compra, descripcion, estado, fecha_carga, id_interno, estado_publicacion, tipo_licitacion
                         FROM licitaciones 
                         WHERE id = %s
                         """,
@@ -36,7 +36,8 @@ class LicitacionShowService:
                         estado=row[6],
                         fecha_carga=row[7],
                         id_interno=row[8],
-                        estado_publicacion_nombre=row[9] # Ajuste si fuera necesario, pero el schema dice estado_publicacion
+                        estado_publicacion=row[9], # Asegurando que coincida con el schema
+                        tipo_licitacion=row[10]
                     )
             
             return ApiResponse.ok(

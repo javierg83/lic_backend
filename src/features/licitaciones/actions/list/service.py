@@ -21,7 +21,8 @@ class LicitacionListService:
                             f.presupuesto_referencial,
                             f.moneda,
                             (SELECT COUNT(id) FROM items_licitacion il WHERE il.licitacion_id = l.id) as cantidad_items,
-                            (SELECT COUNT(DISTINCT hp.item_key) FROM homologaciones_productos hp WHERE hp.licitacion_id = l.id AND hp.candidato_seleccionado_id IS NOT NULL) as cantidad_homologados
+                            (SELECT COUNT(DISTINCT hp.item_key) FROM homologaciones_productos hp WHERE hp.licitacion_id = l.id AND hp.candidato_seleccionado_id IS NOT NULL) as cantidad_homologados,
+                            l.tipo_licitacion
                         FROM licitaciones l
                         LEFT JOIN finanzas_licitacion f ON l.id = f.licitacion_id
                         ORDER BY l.fecha_carga DESC
@@ -46,7 +47,8 @@ class LicitacionListService:
                             moneda=row[7],
                             cantidad_items=cantidad_items,
                             cantidad_homologados=cantidad_homologados,
-                            porcentaje_homologacion=porcentaje_homologacion
+                            porcentaje_homologacion=porcentaje_homologacion,
+                            tipo_licitacion=row[10]
                         ))
             
             return ApiResponse.ok(
