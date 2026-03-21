@@ -14,13 +14,13 @@ from src.constants.states import FileStatus
 
 class LicitacionNewService:
     @staticmethod
-    async def process(nombre: str, files: List[UploadFile]) -> ApiResponse[LicitacionNewResponse]:
+    async def process(nombre: str, files: List[UploadFile], tipo_licitacion: str = 'LICITACION_PUBLICA') -> ApiResponse[LicitacionNewResponse]:
         from dotenv import load_dotenv
         load_dotenv(override=True)
         storage_path = os.getenv("FILE_STORAGE", "storage")
         max_size_mb = int(os.getenv("FILE_MAX_SIZE", "1"))
         max_size_bytes = max_size_mb * 1024 * 1024
-        allowed_extensions = os.getenv("FILE_EXTENSION", ".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv").lower().split(",")
+        allowed_extensions = os.getenv("FILE_EXTENSION", ".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.json").lower().split(",")
         
         if not os.path.exists(storage_path):
             os.makedirs(storage_path)
@@ -39,13 +39,18 @@ class LicitacionNewService:
             file_hash = hashlib.md5(content).hexdigest()
             await file.seek(0) # Reset pointer
 
+            print(f"[DEBUG] Validando archivo: {file.filename}, Ext: {file_ext}")
+            
             file_error = None
             if file_ext not in allowed_extensions:
                 file_error = f"Extensión {file_ext} no permitida. Permitidas: {', '.join(allowed_extensions)}"
+                print(f"[ERROR] Validación fallida por extensión: {file_ext}")
             elif file_size > max_size_bytes:
                 file_error = f"El archivo excede el tamaño máximo de {max_size_mb}MB"
+                print(f"[ERROR] Validación fallida por tamaño: {file_size} bytes")
             elif file_hash in hashes_in_batch:
                 file_error = "Archivo duplicado en el mismo envío"
+                print(f"[ERROR] Validación fallida por duplicidad de hash en el lote")
             
             if file_error:
                 validation_results.append(FileValidationResult(nombre=file.filename, valido=False, error=file_error))
@@ -62,10 +67,13 @@ class LicitacionNewService:
                 })
 
         if any_error:
+            print(f"[WARNING] Proceso abortado: Uno o más archivos no cumplen requisitos. {validation_results}")
             return ApiResponse.fail(
                 message="Uno o más archivos no cumplen con los requisitos",
                 data=LicitacionNewResponse(nombre=nombre, archivos_procesados=validation_results)
             )
+        
+        print(f"[DEBUG] Todos los archivos ({len(valid_files_data)}) pasaron validación.")
 
         # Database transaction
         conn = Database.get_connection()
@@ -74,8 +82,8 @@ class LicitacionNewService:
                 with conn.cursor() as cur:
                     # Insert Licitacion
                     cur.execute(
-                        "INSERT INTO licitaciones (nombre, estado) VALUES (%s, 'PENDIENTE') RETURNING id, id_interno",
-                        (nombre,)
+                        "INSERT INTO licitaciones (nombre, estado, tipo_licitacion) VALUES (%s, 'PENDIENTE', %s) RETURNING id, id_interno",
+                        (nombre, tipo_licitacion)
                     )
                     row = cur.fetchone()
                     licitacion_id = row[0]
