@@ -18,6 +18,10 @@ class AITokenUsageResponse(BaseModel):
     input_tokens: int
     output_tokens: int
     total_tokens: int
+    input_cost: float = 0.0
+    output_cost: float = 0.0
+    total_cost: float = 0.0
+    total_cost_clp: float = 0.0
     created_at: datetime
 
     class Config:
@@ -30,6 +34,10 @@ class AIMetricsSummary(BaseModel):
     total_input: int
     total_output: int
     total_tokens: int
+    input_cost: float = 0.0
+    output_cost: float = 0.0
+    total_cost: float = 0.0
+    total_cost_clp: float = 0.0
 
 class AIMetricsResponse(BaseModel):
     licitacion_id: str
@@ -38,3 +46,5 @@ class AIMetricsResponse(BaseModel):
     total_input_all: int
     total_output_all: int
     total_all: int
+    total_cost_all: float = 0.0
+    total_cost_all_clp: float = 0.0
