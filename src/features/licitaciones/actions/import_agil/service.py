@@ -128,7 +128,8 @@ class CompraAgilService:
         os.makedirs(descarga_dir, exist_ok=True)
         print(f"[TRACE] Directorio de descargas preparado: {descarga_dir}")
 
-        async with httpx.AsyncClient() as client:
+        timeout_config = httpx.Timeout(45.0, connect=45.0)
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
             print("[TRACE] Evaluando extracción de información base...")
             # 1. Check Historical/Details if needed. Here we just fetch the Attachments.
             # You can add logic to fetch "Ficha" and save it as a PDF or JSON to the UploadFile list 
@@ -203,45 +204,39 @@ class CompraAgilService:
             list_url = f"{CompraAgilService.BASE_URL_ADJUNTO}/adjunto-compra-agil/v1/adjuntos-compra-agil/listar/{codigo}"
             print(f"[TRACE] Solicitando lista de adjuntos a URL: {list_url}")
             
-            res_list = await client.get(list_url, headers=headers_adjunto)
-            print(f"[TRACE] Respuesta adjuntos recibida. Status Code: {res_list.status_code}")
-            
-            if res_list.status_code != 200:
-                print("==== ERROR LISTAR ADJUNTOS ====")
-                print(f"[ERROR] STATUS: {res_list.status_code}")
-                print(f"[ERROR] REASON: {res_list.text}")
-                return ApiResponse.fail(message=f"Error obteniendo lista de adjuntos de Mercado Público (Status: {res_list.status_code})")
-            
-            try:
-                payload_list = res_list.json()
-            except Exception as e:
-                print(f"[ERROR] No se pudo parsear el JSON de la respuesta: {e}")
-                print(f"[ERROR] Texto recibido: {res_list.text}")
-                return ApiResponse.fail(message="No se pudo interpretar la respuesta del servidor de Mercado Público como JSON.")
-                
-            print("==== PAYLOAD LISTAR ADJUNTOS ====")
-            print(payload_list)
-            
-            payload_dict = payload_list.get("payload") or {}
-            
-            # Soporta tanto el formato antiguo ("Data": [...]) como el nuevo ("files": [...])
             archivos_data = []
-            if isinstance(payload_dict.get("Data"), list):
-                archivos_data = payload_dict["Data"]
-            elif isinstance(payload_dict.get("files"), list):
-                archivos_data = payload_dict["files"]
-            else:
-                # Si no hay Data/files pero tampoco archivos previos (ficha), es un error.
-                # Si ya tenemos la ficha en upload_files, simplemente dejamos archivos_data vacío.
-                if not upload_files:
-                    print("[ERROR] Estructura de payload de adjuntos desconocida desde Mercado Público.")
-                    print(f"[DEBUG] payload_dict: {payload_dict}")
-                    return ApiResponse.fail(message="Estructura de payload de adjuntos desconocida desde Mercado Público.")
+            try:
+                res_list = await client.get(list_url, headers=headers_adjunto)
+                print(f"[TRACE] Respuesta adjuntos recibida. Status Code: {res_list.status_code}")
+                
+                if res_list.status_code != 200:
+                    print("==== ERROR LISTAR ADJUNTOS ====")
+                    print(f"[ERROR] STATUS: {res_list.status_code}")
+                    print(f"[ERROR] REASON: {res_list.text}")
+                    print("[WARNING] Continuando el proceso únicamente con la Ficha capturada.")
                 else:
-                    print("[TRACE] No se encontraron adjuntos adicionales en el payload, continuando con archivos ya descargados.")
+                    try:
+                        payload_list = res_list.json()
+                        payload_dict = payload_list.get("payload") or {}
+                        
+                        if isinstance(payload_dict.get("Data"), list):
+                            archivos_data = payload_dict["Data"]
+                        elif isinstance(payload_dict.get("files"), list):
+                            archivos_data = payload_dict["files"]
+                        else:
+                            if not upload_files:
+                                return ApiResponse.fail(message="Estructura de payload de adjuntos desconocida desde Mercado Público.")
+                            else:
+                                print("[TRACE] No se encontraron adjuntos adicionales en el payload.")
+                    except Exception as e:
+                        print(f"[ERROR] No se pudo parsear el JSON de la respuesta: {e}")
+                        
+            except Exception as e:
+                print(f"[ERROR] Falló la conexión con la API de adjuntos: {e}")
+                print("[WARNING] Procediendo solo con la Ficha capturada.")
             
             if not archivos_data and not upload_files:
-                return ApiResponse.fail(message="No se encontraron archivos para esta Licitación.")
+                return ApiResponse.fail(message="No se encontraron archivos ni ficha para esta Licitación.")
 
             for arch in archivos_data:
                 # Extraer uuid y nombre soportando ambos formatos (Url/NombreArchivo o id/nombreArchivo)
