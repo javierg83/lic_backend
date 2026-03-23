@@ -59,7 +59,7 @@ def clear_redis_keys(prefixes):
         print(f"❌ Error al conectar o procesar Redis: {e}")
 
 if __name__ == "__main__":
-    codigos_a_borrar = [f"{i}_" for i in range(1, 41)]
+    codigos_a_borrar = [f"{i}_" for i in range(88, 130)]
     print("Se buscarán y eliminarán llaves doc_raw y doc_raw_page que comiencen con los siguientes prefijos:")
     print(codigos_a_borrar)
     print("-" * 50)
