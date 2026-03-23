@@ -2,11 +2,7 @@ from fastapi import HTTPException
 from src.core.security import create_access_token
 from .schemas import LoginData
 
-HARDCODED_USER = {
-    "username": "usuario",
-    "password": "password",
-    "nombre_usuario": "Administrador"
-}
+from src.core.database import Database
 
 class AuthService:
     @staticmethod
@@ -14,11 +10,17 @@ class AuthService:
         username = data.username
         password = data.password
 
-        if username != HARDCODED_USER["username"] or password != HARDCODED_USER["password"]:
+        query = "SELECT * FROM usuarios WHERE username = %s"
+        user_row = Database.execute_query(query, (username,), fetch_all=False)
+
+        if not user_row or user_row["password_hash"] != password:
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-        token = create_access_token({"sub": username})
+        # El rol se incluye en el token para evitar consultas extras si es necesario
+        token = create_access_token({"sub": username, "rol": user_row["rol"]})
+        
         return {
             "access_token": token,
-            "nombre_usuario": HARDCODED_USER["nombre_usuario"]
+            "nombre_usuario": user_row["nombre_usuario"],
+            "rol": user_row["rol"]
         }
