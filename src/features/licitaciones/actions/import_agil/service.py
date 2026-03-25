@@ -51,9 +51,9 @@ class CompraAgilService:
     }
 
     @staticmethod
-    def _capture_web_screenshot(codigo: str, output_path: str) -> bytes:
+    def _capture_web_screenshot(codigo: str) -> bytes:
         """
-        Captura la ficha de Mercado Público como una imagen y la guarda en un PDF.
+        Captura la ficha de Mercado Público como una imagen generándola en memoria RAM.
         Utiliza Selenium para asegurar fidelidad visual.
         """
         import base64
@@ -99,11 +99,12 @@ class CompraAgilService:
             if img.mode in ('RGBA', 'P'):
                 img = img.convert('RGB')
             
-            img.save(output_path, "PDF", resolution=100.0)
-            print(f"[TRACE] PDF fotográfico generado en: {output_path}")
+            pdf_buffer = io.BytesIO()
+            img.save(pdf_buffer, "PDF", resolution=100.0)
+            pdf_bytes = pdf_buffer.getvalue()
+            print(f"[TRACE] PDF fotográfico generado en memoria")
             
-            with open(output_path, "rb") as f:
-                return f.read()
+            return pdf_bytes
 
         except Exception as e:
             print(f"[ERROR] Fallo en captura de pantalla Selenium: {e}")
@@ -123,10 +124,7 @@ class CompraAgilService:
             print("[ERROR] No se pudo extraer un código válido de Compra Ágil.")
             return ApiResponse.fail(message="No se pudo extraer un código válido de Compra Ágil de la entrada.")
 
-        # Ensure the fallback directory exists (though LicitacionNewService will save in main storage)
-        descarga_dir = "descarga_auto"
-        os.makedirs(descarga_dir, exist_ok=True)
-        print(f"[TRACE] Directorio de descargas preparado: {descarga_dir}")
+        print("[TRACE] Preparando importación en memoria (sin descargas físicas)")
 
         timeout_config = httpx.Timeout(45.0, connect=45.0)
         async with httpx.AsyncClient(timeout=timeout_config) as client:
@@ -162,18 +160,14 @@ class CompraAgilService:
                     ficha_nombre_json = f"ficha_datos_{codigo}.json"
                     ficha_nombre_pdf = f"ficha_datos_{codigo}.pdf"
                     
-                    # 1. Guardar JSON Original como backup
-                    local_path_json = os.path.join(descarga_dir, ficha_nombre_json)
-                    with open(local_path_json, "wb") as f:
-                        f.write(res_ficha.content)
-                    archivos_procesados.append(ArchivoCompraAgilResponse(nombre=ficha_nombre_json, ruta=local_path_json, uuid="ficha_json"))
+                    # 1. Mantener JSON Original en memoria
+                    archivos_procesados.append(ArchivoCompraAgilResponse(nombre=ficha_nombre_json, ruta="MEMORIA", uuid="ficha_json"))
                     
                     # 2. CAPTURAR WEB SCREENSHOT (Para ETL y Visualización)
                     print(f"[TRACE] Capturando pantalla de la ficha web oficial...")
-                    local_path_pdf = os.path.join(descarga_dir, ficha_nombre_pdf)
-                    pdf_bytes = CompraAgilService._capture_web_screenshot(codigo, local_path_pdf)
+                    pdf_bytes = CompraAgilService._capture_web_screenshot(codigo)
                     
-                    archivos_procesados.append(ArchivoCompraAgilResponse(nombre=ficha_nombre_pdf, ruta=local_path_pdf, uuid="ficha_pdf"))
+                    archivos_procesados.append(ArchivoCompraAgilResponse(nombre=ficha_nombre_pdf, ruta="MEMORIA", uuid="ficha_pdf"))
                     
                     # Preparar el PDF para envío al procesamiento
                     file_like_pdf = io.BytesIO(pdf_bytes)
@@ -262,12 +256,7 @@ class CompraAgilService:
                     if not nombre or nombre.strip() == "":
                         nombre = f"adjunto_{uuid}.pdf"
                     
-                    # Save a backup locally in descarga_auto/
-                    local_path = os.path.join(descarga_dir, f"{codigo}_{nombre}")
-                    with open(local_path, "wb") as f:
-                        f.write(content)
-                        
-                    archivos_procesados.append(ArchivoCompraAgilResponse(nombre=nombre, ruta=local_path, uuid=uuid))
+                    archivos_procesados.append(ArchivoCompraAgilResponse(nombre=nombre, ruta="MEMORIA", uuid=uuid))
                     
                     # Convert to FastAPI UploadFile for LicitacionNewService
                     file_like = io.BytesIO(content)

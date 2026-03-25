@@ -17,13 +17,16 @@ class LicitacionNewService:
     async def process(nombre: str, files: List[UploadFile], tipo_licitacion: str = 'LICITACION_PUBLICA') -> ApiResponse[LicitacionNewResponse]:
         from dotenv import load_dotenv
         load_dotenv(override=True)
-        storage_path = os.getenv("FILE_STORAGE", "storage")
-        max_size_mb = int(os.getenv("FILE_MAX_SIZE", "1"))
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
+        supabase_bucket = os.getenv("SUPABASE_BUCKET", "licitaciones")
+        
+        if not supabase_url or not supabase_key:
+            print("[WARNING] Supabase credentials missing (SUPABASE_URL, SUPABASE_KEY)")
+            
+        max_size_mb = int(os.getenv("FILE_MAX_SIZE", "50")) # Increased default size because 1MB is too small generally
         max_size_bytes = max_size_mb * 1024 * 1024
         allowed_extensions = os.getenv("FILE_EXTENSION", ".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.json").lower().split(",")
-        
-        if not os.path.exists(storage_path):
-            os.makedirs(storage_path)
 
         validation_results = []
         valid_files_data = []
@@ -89,14 +92,32 @@ class LicitacionNewService:
                     licitacion_id = row[0]
                     licitacion_id_interno = row[1]
 
+                    # Connect to Supabase
+                    from supabase import create_client, Client
+                    supabase: Client | None = None
+                    if supabase_url and supabase_key:
+                        supabase = create_client(supabase_url, supabase_key)
+
                     # Insert Files
                     for i, file_data in enumerate(valid_files_data):
-                        # ... (rest of the loop)
-                        file_path = os.path.join(storage_path, f"{licitacion_id}_{file_data['filename']}")
+                        # Construct Supabase organized path
+                        file_path = f"licitaciones/{licitacion_id}/{file_data['filename']}"
                         
-                        # Save to disk
-                        with open(file_path, "wb") as f:
-                            f.write(file_data["content"])
+                        # Save to Supabase
+                        if supabase:
+                            try:
+                                supabase.storage.from_(supabase_bucket).upload(
+                                    path=file_path,
+                                    file=file_data["content"],
+                                    file_options={"content-type": file_data["content_type"]}
+                                )
+                                print(f"✅ Archivo subido a Supabase: {file_path}")
+                            except Exception as e:
+                                print(f"❌ Error al subir a Supabase: {e}")
+                                # Opcional: fallback a disco o re-raise
+                                raise e
+                        else:
+                            print(f"⚠️ [WARNING] No se subió el archivo {file_path} porque falta credencial de Supabase.")
 
                         cur.execute(
                             """
