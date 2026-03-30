@@ -11,10 +11,12 @@ import traceback
 from datetime import datetime
 from .schemas import LicitacionNewResponse, FileValidationResult
 from src.constants.states import FileStatus
+from src.core.heroku_utils import scale_worker_dyno
 
 class LicitacionNewService:
     @staticmethod
     async def process(nombre: str, files: List[UploadFile], tipo_licitacion: str = 'LICITACION_PUBLICA') -> ApiResponse[LicitacionNewResponse]:
+        from src.features.licitaciones.sub_features.gestion.actions.documentos.service import GestionDocumentosService
         from dotenv import load_dotenv
         load_dotenv(override=True)
         supabase_url = os.getenv("SUPABASE_URL")
@@ -101,7 +103,8 @@ class LicitacionNewService:
                     # Insert Files
                     for i, file_data in enumerate(valid_files_data):
                         # Construct Supabase organized path
-                        file_path = f"licitaciones/{licitacion_id}/{file_data['filename']}"
+                        sanitized_name = GestionDocumentosService._sanitize_filename(file_data['filename'])
+                        file_path = f"licitaciones/{licitacion_id}/{sanitized_name}"
                         
                         # Save to Supabase
                         if supabase:
@@ -114,7 +117,7 @@ class LicitacionNewService:
                                 print(f"✅ Archivo subido a Supabase: {file_path}")
                             except Exception as e:
                                 print(f"❌ Error al subir a Supabase: {e}")
-                                # Opcional: fallback a disco o re-raise
+                                # Si ya existe o hay error, re-intentamos seguir o fallar
                                 raise e
                         else:
                             print(f"⚠️ [WARNING] No se subió el archivo {file_path} porque falta credencial de Supabase.")
@@ -144,8 +147,12 @@ class LicitacionNewService:
                 }
                 r.lpush("document_queue", json.dumps(queue_data))
                 print(f"📢 Mensaje enviado a Redis para Licitación ID: {licitacion_id}")
+                
+                # Despertar el worker (Escalar a 1 dyno)
+                scale_worker_dyno(1)
+                
             except Exception as redis_err:
-                print(f"⚠️ Error al notificar a Redis: {redis_err}")
+                print(f"⚠️ Error al notificar a Redis/Heroku: {redis_err}")
                 traceback.print_exc()
 
             return ApiResponse.ok(

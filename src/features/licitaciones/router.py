@@ -10,6 +10,7 @@ from .sub_features.auditoria.router import router as auditoria_router
 from .sub_features.homologaciones.router import router as homologaciones_router
 from .sub_features.ai_metrics.router import router as ai_metrics_router
 from .sub_features.entregas.router import router as entregas_router
+from .sub_features.gestion.router import router as gestion_router
 
 router = APIRouter()
 
@@ -24,3 +25,4 @@ router.include_router(auditoria_router)
 router.include_router(homologaciones_router)
 router.include_router(ai_metrics_router)
 router.include_router(entregas_router)
+router.include_router(gestion_router)

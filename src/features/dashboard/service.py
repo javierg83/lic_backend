@@ -8,8 +8,8 @@ class DashboardService:
         kpis_query = """
             SELECT 
                 (SELECT COUNT(*) FROM licitaciones WHERE obsoleto = false) as licitaciones_cargadas,
-                (SELECT COUNT(*) FROM licitaciones WHERE obsoleto = false AND estado NOT IN ('Adjudicada', 'No Adjudicada', 'Desierta', 'Cancelada', 'Suspendida')) as licitaciones_en_proceso,
-                (SELECT COUNT(*) FROM licitaciones WHERE obsoleto = false AND estado = 'Adjudicada') as licitaciones_adjudicadas,
+                (SELECT COUNT(*) FROM licitaciones WHERE obsoleto = false AND estado NOT IN ('ADJUDICADA', 'NO_ADJUDICADA', 'DECLINADA', 'CERRADA')) as licitaciones_en_proceso,
+                (SELECT COUNT(*) FROM licitaciones WHERE obsoleto = false AND estado = 'ADJUDICADA') as licitaciones_adjudicadas,
                 (SELECT COALESCE(SUM(presupuesto_referencial), 0) FROM finanzas_licitacion WHERE obsoleto = false) as presupuesto_total
         """
         kpis_result = Database.execute_query(kpis_query, fetch_all=False)
@@ -20,9 +20,10 @@ class DashboardService:
              }
 
         monto_adj_query = """
-            SELECT COALESCE(SUM(monto_total_adjudicado), 0) as monto_adjudicado_total
-            FROM adjudicaciones_licitacion
-            WHERE obsoleto = false
+            SELECT COALESCE(SUM(g.monto), 0) as monto_adjudicado_total
+            FROM gestion_licitaciones g
+            JOIN licitaciones l ON g.licitacion_id = l.id
+            WHERE l.obsoleto = false AND l.estado = 'ADJUDICADA'
         """
         monto_adj_result = Database.execute_query(monto_adj_query, fetch_all=False)
         monto_adjudicado_total = monto_adj_result["monto_adjudicado_total"] if monto_adj_result else 0
@@ -37,7 +38,7 @@ class DashboardService:
                 l.fecha_carga,
                 l.fecha_cierre as fecha_limite,
                 COALESCE((SELECT SUM(presupuesto_referencial) FROM finanzas_licitacion WHERE licitacion_id = l.id AND obsoleto = false), 0) as presupuesto_maximo,
-                COALESCE((SELECT monto_total_adjudicado FROM adjudicaciones_licitacion WHERE licitacion_id = l.id LIMIT 1), 0) as monto_adjudicado,
+                COALESCE((SELECT monto FROM gestion_licitaciones WHERE licitacion_id = l.id LIMIT 1), 0) as monto_adjudicado,
                 (SELECT COUNT(*) FROM items_licitacion WHERE licitacion_id = l.id AND obsoleto = false) as cantidad_items_total,
                 (SELECT COUNT(*) FROM items_licitacion WHERE licitacion_id = l.id AND adjudicado = true AND obsoleto = false) as cantidad_items_adjudicados
             FROM licitaciones l
@@ -55,7 +56,7 @@ class DashboardService:
                        "total_items": 0, "items_adjudicados": 0
                   }
              por_usuario[u]["cargadas"] += 1
-             if row["estado"] == 'Adjudicada':
+             if row["estado"] == 'ADJUDICADA':
                   por_usuario[u]["adjudicadas"] += 1
                   por_usuario[u]["monto_adjudicado"] += (row["monto_adjudicado"] or 0)
              
@@ -109,6 +110,54 @@ class DashboardService:
              r["presupuesto_maximo"] = float(r["presupuesto_maximo"] or 0)
              r["monto_adjudicado"] = float(r["monto_adjudicado"] or 0)
 
+        estados_query = """
+            SELECT COALESCE(estado, 'PENDIENTE') as estado, COUNT(*) as cantidad
+            FROM licitaciones
+            WHERE obsoleto = false
+            GROUP BY COALESCE(estado, 'PENDIENTE')
+        """
+        estados_result = Database.execute_query(estados_query)
+        distribucion_estados = {row["estado"]: row["cantidad"] for row in estados_result} if estados_result else {}
+
+        finanzas_query = """
+            SELECT 
+                l.estado,
+                SUM(g.monto) as total_monto
+            FROM gestion_licitaciones g
+            JOIN licitaciones l ON g.licitacion_id = l.id
+            WHERE l.obsoleto = false AND g.monto IS NOT NULL
+            GROUP BY l.estado
+        """
+        finanzas_result = Database.execute_query(finanzas_query)
+        
+        monto_postulado = 0.0
+        monto_adjudicado = 0.0
+        monto_perdido = 0.0
+        monto_en_evaluacion = 0.0
+
+        if finanzas_result:
+            for row in finanzas_result:
+                est = row["estado"]
+                val = float(row["total_monto"] or 0)
+                if est in ['POSTULACION_ENVIADA', 'OFERTA_PRESENTADA', 'EN_EVALUACION', 'ADJUDICADA', 'NO_ADJUDICADA']:
+                    monto_postulado += val
+                if est == 'ADJUDICADA':
+                    monto_adjudicado += val
+                if est == 'NO_ADJUDICADA':
+                    monto_perdido += val
+                if est in ['POSTULACION_ENVIADA', 'OFERTA_PRESENTADA', 'EN_EVALUACION']:
+                    monto_en_evaluacion += val
+
+        win_rate = round((monto_adjudicado / monto_postulado) * 100, 1) if monto_postulado > 0 else 0.0
+
+        metricas_financieras = {
+            "monto_postulado": monto_postulado,
+            "monto_adjudicado": monto_adjudicado,
+            "monto_perdido": monto_perdido,
+            "monto_en_evaluacion": monto_en_evaluacion,
+            "win_rate": win_rate
+        }
+
         return {
              "kpis": {
                   "licitaciones_cargadas": kpis_result["licitaciones_cargadas"] or 0,
@@ -117,6 +166,8 @@ class DashboardService:
                   "presupuesto_total": float(kpis_result["presupuesto_total"] or 0),
                   "monto_adjudicado_total": float(monto_adjudicado_total or 0)
              },
+             "distribucion_estados": distribucion_estados,
+             "metricas_financieras": metricas_financieras,
              "por_usuario": por_usuario,
              "uso_mensual": uso_mensual,
              "items_mas_cotizados": items_mas_cotizados,
