@@ -1,7 +1,16 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
+
+class ArchivoShow(BaseModel):
+    id: UUID
+    id_interno: int
+    nombre_archivo_org: str
+    tipo_contenido: Optional[str] = None
+    peso_bytes: Optional[int] = None
+    estado_procesamiento: str
+    fecha_subida: datetime
 
 class LicitacionShowResponse(BaseModel):
     id: UUID
@@ -15,3 +24,4 @@ class LicitacionShowResponse(BaseModel):
     estado: Optional[str] = None
     tipo_licitacion: Optional[str] = None
     fecha_carga: datetime
+    archivos: List[ArchivoShow] = []
