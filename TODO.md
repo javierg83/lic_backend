@@ -10,3 +10,9 @@
 
 ## Funcionalidades Core
 - [ ] **Borrado Lógico de Licitaciones**: Implementar borrado lógico (e.g., campo `deleted_at` o `is_deleted`). El borrado **no debe ser a nivel de base de datos** (DELETE SQL); el registro debe mantenerse en la DB por integridad histórica, pero debe modificarse la lógica en el backend y frontend para que no sea visible en los formularios, listados ni detalles respectivos.
+13: 
+14: ## Performance y UX
+15: - [ ] **Asincronía en Importación Compra Ágil**: Mover la lógica de `CompraAgilService.import_compra_agil` a una tarea de fondo.
+16:     - *Problema*: Actualmente el proceso de Selenium (`_capture_web_screenshot`) y la descarga de adjuntos son síncronos y bloquean el hilo de FastAPI/Uvicorn, impidiendo navegar por otras secciones del sistema mientras se importa.
+17:     - *Solución*: El controlador debe retornar un `202 Accepted` inmediatamente y procesar el scraping y las descargas en segundo plano (vía `fastapi.BackgroundTasks` o el Worker de Redis).
+18: - [ ] **Optimización de Selenium**: Asegurar que las instancias de WebDriver se cierren correctamente y considerar el uso de un pool o una solución más ligera si la carga aumenta.
