@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -19,7 +20,7 @@ def root():
 # -----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:4200").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

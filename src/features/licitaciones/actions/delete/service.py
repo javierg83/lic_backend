@@ -22,7 +22,7 @@ class DeleteLicitacionService:
                     # 1. Verificar si existe la licitación
                     cur.execute("SELECT id FROM licitaciones WHERE id = %s", (licitacion_id,))
                     if not cur.fetchone():
-                        return ApiResponse.fail(message="Licitación no encontrada", status_code=404)
+                        return ApiResponse.fail(message="Licitación no encontrada", error="404")
 
                     # 2. Borrar en Storage (archivos de gestion)
                     cur.execute("SELECT ruta_archivo FROM gestion_licitacion_documentos WHERE gestion_id = %s", (licitacion_id,))

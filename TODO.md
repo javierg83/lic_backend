@@ -16,3 +16,6 @@
 16:     - *Problema*: Actualmente el proceso de Selenium (`_capture_web_screenshot`) y la descarga de adjuntos son síncronos y bloquean el hilo de FastAPI/Uvicorn, impidiendo navegar por otras secciones del sistema mientras se importa.
 17:     - *Solución*: El controlador debe retornar un `202 Accepted` inmediatamente y procesar el scraping y las descargas en segundo plano (vía `fastapi.BackgroundTasks` o el Worker de Redis).
 18: - [ ] **Optimización de Selenium**: Asegurar que las instancias de WebDriver se cierren correctamente y considerar el uso de un pool o una solución más ligera si la carga aumenta.
+
+## Calidad de Datos (Licitaciones)
+- [ ] **[PENDIENTE]** Implementar detalle de distribución de entregas por ítem (Licitaciones Públicas).
