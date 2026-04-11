@@ -6,14 +6,24 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 class Database:
     @staticmethod
     def get_connection():
         try:
-            conn = psycopg2.connect(DATABASE_URL)
-            return conn
+            database_url = os.getenv("DATABASE_URL")
+            
+            if database_url:
+                print("[DB] Usando DATABASE_URL")
+                return psycopg2.connect(database_url)
+                
+            print("[DB] Usando configuración local por variables separadas")
+            return psycopg2.connect(
+                host=os.getenv("DB_POSTGRES_HOST"),
+                dbname=os.getenv("DB_POSTGRES_DB"),
+                user=os.getenv("DB_POSTGRES_USER"),
+                password=os.getenv("DB_POSTGRES_PASSWORD"),
+                port=os.getenv("DB_POSTGRES_PORT", "5432")
+            )
         except Exception as e:
             print(f"Error connecting to database: {e}")
             raise e
