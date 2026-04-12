@@ -28,7 +28,7 @@ class LicitacionNewService:
             
         max_size_mb = int(os.getenv("FILE_MAX_SIZE", "50")) # Increased default size because 1MB is too small generally
         max_size_bytes = max_size_mb * 1024 * 1024
-        allowed_extensions = os.getenv("FILE_EXTENSION", ".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.json").lower().split(",")
+        allowed_extensions = [ext.strip() for ext in os.getenv("FILE_EXTENSION", ".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.json").lower().split(",")]
 
         validation_results = []
         valid_files_data = []
