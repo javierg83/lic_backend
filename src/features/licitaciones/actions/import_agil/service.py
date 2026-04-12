@@ -51,6 +51,35 @@ class CompraAgilService:
     }
 
     @staticmethod
+    def _build_chrome_driver() -> "webdriver.Chrome":
+        import os
+        from selenium import webdriver
+        from selenium.webdriver.chrome.options import Options
+
+        # Detección del entorno en base a las variables de Heroku
+        env_name = "Producción (Heroku)" if "DYNO" in os.environ else "Local"
+        print(f"[TRACE] Iniciando creación de driver Chrome. Entorno detectado: {env_name}")
+
+        options = Options()
+        options.add_argument('--headless=new')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--window-size=1440,3000')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36')
+        
+        # Opcional: permite forzar la ruta local del binario solo si alguna vez falla
+        chrome_binary = os.getenv("CHROME_BINARY")
+        if chrome_binary:
+            print(f"[TRACE] Usando binary_location: {chrome_binary}")
+            options.binary_location = chrome_binary
+            
+        driver = webdriver.Chrome(options=options)
+        print(f"[TRACE] Navegador abierto exitosamente en modo headless.")
+        return driver
+
+    @staticmethod
     def _capture_web_screenshot(codigo: str) -> bytes:
         """
         Captura la ficha de Mercado Público como una imagen generándola en memoria RAM.
@@ -58,34 +87,25 @@ class CompraAgilService:
         """
         import base64
         import time
-        from selenium import webdriver
-        from selenium.webdriver.chrome.service import Service
-        from selenium.webdriver.chrome.options import Options
-        from webdriver_manager.chrome import ChromeDriverManager
+        import traceback
+        import io
         from PIL import Image
 
         url = f"https://buscador.mercadopublico.cl/ficha?code={codigo}"
-        print(f"[TRACE] Capturando pantalla completa para: {url}")
-
-        options = Options()
-        options.add_argument('--headless=new')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--window-size=1280,1080')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36')
+        print(f"[TRACE] URL a capturar: {url}")
         
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
-        
+        driver = None
         try:
+            # 1. Crear el driver usando la nueva función reutilizable
+            driver = CompraAgilService._build_chrome_driver()
+
             driver.get(url)
             time.sleep(8) # Espera a carga inicial
             
             # Scroll para asegurar carga de datos (lazy loading)
             total_height = driver.execute_script("return document.body.scrollHeight")
-            driver.set_window_size(1280, total_height)
+            # Usa el max entre 3000 y el tamaño para que la captura cubra todo
+            driver.set_window_size(1440, max(3000, total_height))
             time.sleep(2)
 
             # Capturar usando CDP para resolución completa
@@ -102,15 +122,18 @@ class CompraAgilService:
             pdf_buffer = io.BytesIO()
             img.save(pdf_buffer, "PDF", resolution=100.0)
             pdf_bytes = pdf_buffer.getvalue()
-            print(f"[TRACE] PDF fotográfico generado en memoria")
+            print(f"[TRACE] Éxito de captura: PDF fotográfico generado en memoria")
             
             return pdf_bytes
 
         except Exception as e:
-            print(f"[ERROR] Fallo en captura de pantalla Selenium: {e}")
+            print(f"[ERROR] Fallo en captura de pantalla Selenium. Excepción completa:")
+            traceback.print_exc() # Imprime el stacktrace completo
             raise e
         finally:
-            driver.quit()
+            if driver:
+                driver.quit()
+                print(f"[TRACE] Proceso de Driver finalizado y limpiado exitosamente.")
 
     @staticmethod
     async def import_compra_agil(url_or_code: str) -> ApiResponse[ImportCompraAgilResponse]:
