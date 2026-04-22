@@ -12,7 +12,7 @@ class LicitacionUpdateService:
             with conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
                     # Check if licitacion exists
-                    cur.execute("SELECT id FROM licitaciones WHERE id = %s", (str(licitacion_id),))
+                    cur.execute("SELECT id FROM licitaciones_descargadas WHERE id = %s", (str(licitacion_id),))
                     if not cur.fetchone():
                         return ApiResponse.fail(message="Licitación no encontrada", status_code=404)
                     
@@ -44,7 +44,7 @@ class LicitacionUpdateService:
                     params.append(str(licitacion_id))
                     
                     query = f"""
-                        UPDATE licitaciones 
+                        UPDATE licitaciones_descargadas 
                         SET {', '.join(fields_to_update)} 
                         WHERE id = %s 
                         RETURNING id, codigo_licitacion as codigo, nombre as titulo, organismo_solicitante as organismo, descripcion, estado

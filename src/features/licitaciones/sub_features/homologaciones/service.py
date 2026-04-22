@@ -6,11 +6,14 @@ from .schemas import HomologacionesResponse, ResultadoHomologacion, CandidatoHom
 
 class HomologacionesService:
     @staticmethod
-    async def process(licitacion_id: UUID) -> ApiResponse[HomologacionesResponse]:
+    async def process(licitacion_id: UUID, cliente_id: str = None) -> ApiResponse[HomologacionesResponse]:
         conn = Database.get_connection()
         try:
             with conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    if not cliente_id:
+                        return ApiResponse.fail("No se encontró el cliente en la sesión", status_code=403)
+
                     cur.execute(
                         """
                         SELECT
@@ -29,18 +32,19 @@ class HomologacionesService:
                             ch.score_similitud,
                             ch.razonamiento
                         FROM homologaciones_productos hp
+                        JOIN licitaciones_clientes lc ON lc.id = hp.licitacion_cliente_id
                         LEFT JOIN items_licitacion il
-                            ON il.licitacion_id::text = hp.licitacion_id::text
+                            ON il.licitacion_id = lc.licitacion_descargada_id
                             AND (
                                 LOWER(TRIM(il.item_key)) = LOWER(TRIM(hp.item_key))
                                 OR LOWER(TRIM(il.nombre_item)) = LOWER(TRIM(hp.item_key))
                             )
                         LEFT JOIN candidatos_homologacion ch
                             ON ch.homologacion_id = hp.id
-                        WHERE hp.licitacion_id = %s
+                        WHERE lc.licitacion_descargada_id = %s AND lc.cliente_id = %s
                         ORDER BY hp.fecha_homologacion DESC, hp.item_key, ch.ranking
                         """,
-                        (str(licitacion_id),)
+                        (str(licitacion_id), cliente_id)
                     )
                     rows = cur.fetchall()
 
@@ -98,34 +102,51 @@ class HomologacionesService:
 
 class HomologacionesSaveService:
     @staticmethod
-    async def process(licitacion_id: UUID, req: GuardarHomologacionRequest) -> ApiResponse[None]:
+    async def process(licitacion_id: UUID, req: GuardarHomologacionRequest, cliente_id: str = None) -> ApiResponse[None]:
         conn = Database.get_connection()
         try:
             with conn:
                 with conn.cursor() as cur:
+                    if not cliente_id:
+                        return ApiResponse.fail("No se encontró el cliente en la sesión", status_code=403)
+
                     for homologacion_id_str, candidato_codigo in req.selecciones.items():
                         if candidato_codigo:
-                            # Buscar primero el UUID del candidato usando el codigo de producto
+                            # Buscar primero el UUID del candidato asegurando que pertenezca al cliente
                             cur.execute(
                                 """
-                                SELECT id FROM candidatos_homologacion 
-                                WHERE homologacion_id = %s AND producto_codigo = %s
+                                SELECT ch.id FROM candidatos_homologacion ch
+                                JOIN homologaciones_productos hp ON hp.id = ch.homologacion_id
+                                JOIN licitaciones_clientes lc ON lc.id = hp.licitacion_cliente_id
+                                WHERE ch.homologacion_id = %s AND ch.producto_codigo = %s AND lc.cliente_id = %s
                                 LIMIT 1
                                 """,
-                                (homologacion_id_str, candidato_codigo)
+                                (homologacion_id_str, candidato_codigo, cliente_id)
                             )
                             row = cur.fetchone()
                             if row:
                                 candidato_id = row[0]
                                 cur.execute(
-                                    "UPDATE homologaciones_productos SET candidato_seleccionado_id = %s WHERE id = %s",
-                                    (candidato_id, homologacion_id_str)
+                                    """
+                                    UPDATE homologaciones_productos 
+                                    SET candidato_seleccionado_id = %s 
+                                    WHERE id = %s AND licitacion_cliente_id IN (
+                                        SELECT id FROM licitaciones_clientes WHERE cliente_id = %s
+                                    )
+                                    """,
+                                    (candidato_id, homologacion_id_str, cliente_id)
                                 )
                         else:
                             # Caso desmarcar o null
                             cur.execute(
-                                "UPDATE homologaciones_productos SET candidato_seleccionado_id = NULL WHERE id = %s",
-                                (homologacion_id_str,)
+                                """
+                                UPDATE homologaciones_productos 
+                                SET candidato_seleccionado_id = NULL 
+                                WHERE id = %s AND licitacion_cliente_id IN (
+                                    SELECT id FROM licitaciones_clientes WHERE cliente_id = %s
+                                )
+                                """,
+                                (homologacion_id_str, cliente_id)
                             )
             return ApiResponse.ok(message="Selecciones guardadas correctamente", data=None)
 

@@ -14,7 +14,7 @@ class GestionShowService:
                     cur.execute(
                         """
                         SELECT g.id, l.id as licitacion_id, l.estado, g.monto, g.observaciones, g.fecha_resultado, g.fecha_cierre, g.created_at, g.updated_at
-                        FROM licitaciones l
+                        FROM licitaciones_descargadas l
                         LEFT JOIN gestion_licitaciones g ON l.id = g.licitacion_id
                         WHERE l.id = %s
                         """,

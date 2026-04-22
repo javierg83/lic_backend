@@ -87,7 +87,7 @@ class LicitacionNewService:
                 with conn.cursor() as cur:
                     # Insert Licitacion
                     cur.execute(
-                        "INSERT INTO licitaciones (nombre, estado, tipo_licitacion) VALUES (%s, 'PENDIENTE', %s) RETURNING id, id_interno",
+                        "INSERT INTO licitaciones_descargadas (nombre, estado, tipo_licitacion) VALUES (%s, 'PENDIENTE', %s) RETURNING id, id_interno",
                         (nombre, tipo_licitacion)
                     )
                     row = cur.fetchone()

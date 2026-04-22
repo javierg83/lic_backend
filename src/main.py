@@ -36,11 +36,13 @@ from src.features.demo.router import router as demo_router
 from src.features.licitaciones.router import router as licitaciones_router
 from src.features.dashboard.router import router as dashboard_router
 from src.features.config.router import router as config_router
+from src.features.clientes.router import router as clientes_router
 
 app.include_router(demo_router, prefix="/demo", tags=["Demo"])
 app.include_router(licitaciones_router, prefix="/licitaciones", tags=["Licitaciones"])
 app.include_router(dashboard_router, prefix="/api", tags=["API"])
 app.include_router(config_router, prefix="/api/config", tags=["Configuración"])
+app.include_router(clientes_router, prefix="/clientes", tags=["Clientes"])
 
 """
 # para generar seguridad

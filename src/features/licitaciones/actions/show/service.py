@@ -5,26 +5,40 @@ from .schemas import LicitacionShowResponse, ArchivoShow
 
 class LicitacionShowService:
     @staticmethod
-    async def process(licitacion_id: UUID) -> ApiResponse[LicitacionShowResponse]:
+    async def process(licitacion_id: UUID, cliente_id: str = None, rol: str = None) -> ApiResponse[LicitacionShowResponse]:
         conn = Database.get_connection()
         try:
             with conn:
                 with conn.cursor() as cur:
-                    # Fetch Licitacion Basic Info
-                    cur.execute(
-                        """
-                        SELECT id, codigo_licitacion, nombre, entidad_solicitante, unidad_compra, descripcion, estado, fecha_carga, id_interno, estado_publicacion, tipo_licitacion
-                        FROM licitaciones 
-                        WHERE id = %s
-                        """,
-                        (str(licitacion_id),)
-                    )
+                    if not cliente_id and rol != "admin":
+                        return ApiResponse.fail(message="No se encontró el cliente en la sesión", error="403")
+                    
+                    # Fetch Licitacion Basic Info ensuring it belongs to the client's mailbox
+                    if rol == "admin":
+                        cur.execute(
+                            """
+                            SELECT id, codigo_licitacion, nombre, entidad_solicitante, unidad_compra, descripcion, estado as estado_interno, fecha_carga, id_interno, estado_publicacion, tipo_licitacion
+                            FROM licitaciones_descargadas
+                            WHERE id = %s
+                            """,
+                            (str(licitacion_id),)
+                        )
+                    else:
+                        cur.execute(
+                            """
+                            SELECT ld.id, ld.codigo_licitacion, ld.nombre, ld.entidad_solicitante, ld.unidad_compra, ld.descripcion, lc.estado_interno, ld.fecha_carga, ld.id_interno, ld.estado_publicacion, ld.tipo_licitacion
+                            FROM licitaciones_descargadas ld
+                            JOIN licitaciones_clientes lc ON lc.licitacion_descargada_id = ld.id
+                            WHERE ld.id = %s AND lc.cliente_id = %s
+                            """,
+                            (str(licitacion_id), cliente_id)
+                        )
                     row = cur.fetchone()
                     
                     if not row:
                         return ApiResponse.fail(
                             message="Licitación no encontrada",
-                            status_code=404
+                            error="404"
                         )
                     
                     # Fetch Files

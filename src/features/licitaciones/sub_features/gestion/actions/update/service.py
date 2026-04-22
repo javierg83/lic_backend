@@ -23,7 +23,7 @@ class GestionUpdateService:
                         fecha_cierre = date.today()
 
                     # Validar estado actual sistémico
-                    cur.execute("SELECT estado FROM licitaciones WHERE id = %s", (str(licitacion_id),))
+                    cur.execute("SELECT estado FROM licitaciones_descargadas WHERE id = %s", (str(licitacion_id),))
                     row_lic = cur.fetchone()
                     if not row_lic:
                         return ApiResponse.fail(message="Licitación no encontrada", status_code=404)
@@ -42,7 +42,7 @@ class GestionUpdateService:
                         )
 
                     # Actualizar estado maestro
-                    cur.execute("UPDATE licitaciones SET estado = %s WHERE id = %s", (data.estado, str(licitacion_id)))
+                    cur.execute("UPDATE licitaciones_descargadas SET estado = %s WHERE id = %s", (data.estado, str(licitacion_id)))
 
                     cur.execute(
                         """

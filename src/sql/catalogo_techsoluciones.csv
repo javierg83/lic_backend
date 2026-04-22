@@ -1,0 +1,16 @@
+codigo;nombre_producto;descripcion;precio_referencial
+TEC-001;Laptop HP ProBook 450 G10;Laptop empresarial Intel Core i7-1355U, 16GB RAM, 512GB SSD, 15.6" FHD;890000
+TEC-002;Desktop Dell OptiPlex 7010;PC escritorio Intel Core i5-13500, 8GB RAM, 256GB SSD, Windows 11 Pro;650000
+TEC-003;Servidor Dell PowerEdge T150;Servidor torre Intel Xeon E-2336, 16GB ECC, 2x1TB HDD RAID1;2800000
+TEC-004;Switch Cisco Catalyst 24 puertos;Switch administrable 24 puertos Gigabit PoE+ con 4 uplinks SFP;1250000
+TEC-005;Router MikroTik RB4011;Router empresarial 10 puertos Gigabit, doble banda WiFi, 1GB RAM;320000
+TEC-006;UPS APC Smart 1500VA;UPS online 1500VA/1000W, 6 salidas, pantalla LCD, puerto USB;420000
+TEC-007;Monitor LG 27" 4K IPS;Monitor 27 pulgadas 4K UHD IPS, DisplayPort + HDMI, sin bordes;480000
+TEC-008;Teclado y Mouse Inalámbrico Logitech;Combo teclado-mouse inalámbrico, receptor Unifying, diseño ergonómico;65000
+TEC-009;Impresora HP LaserJet Pro M404dn;Impresora láser monocromo, red ethernet, doble faz automático;320000
+TEC-010;Disco Duro Externo 2TB Seagate;Disco duro portátil 2TB USB 3.0, compatible Windows/Mac;89000
+TEC-011;Licencia Microsoft 365 Business;Licencia Microsoft 365 Business Premium por 1 año, 1 usuario;145000
+TEC-012;Antivirus ESET Endpoint;Licencia ESET Endpoint Security 1 año, 1 equipo;48000
+TEC-013;Cámara IP Hikvision 4MP;Cámara IP domo 4MP, visión nocturna 30m, PoE, H.265+;95000
+TEC-014;Access Point Ubiquiti UniFi AP;Access Point WiFi 6 PoE, cobertura 300m2, 4x4 MIMO;280000
+TEC-015;Cable UTP Cat6 Caja 305m;Caja cable UTP categoría 6 sólido 23AWG LSZH 305 metros;95000

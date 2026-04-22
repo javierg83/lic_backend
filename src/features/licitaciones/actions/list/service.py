@@ -4,30 +4,60 @@ from .schemas import LicitacionListResponse, LicitacionListItem
 
 class LicitacionListService:
     @staticmethod
-    async def process() -> ApiResponse[LicitacionListResponse]:
+    async def process(cliente_id: str = None, rol: str = None) -> ApiResponse[LicitacionListResponse]:
         conn = Database.get_connection()
         try:
             with conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        """
-                        SELECT 
-                            l.id, 
-                            l.nombre, 
-                            l.estado, 
-                            l.fecha_carga, 
-                            l.id_interno, 
-                            l.estado_publicacion,
-                            f.presupuesto_referencial,
-                            f.moneda,
-                            (SELECT COUNT(id) FROM items_licitacion il WHERE il.licitacion_id = l.id) as cantidad_items,
-                            (SELECT COUNT(DISTINCT hp.item_key) FROM homologaciones_productos hp WHERE hp.licitacion_id = l.id AND hp.candidato_seleccionado_id IS NOT NULL) as cantidad_homologados,
-                            l.tipo_licitacion
-                        FROM licitaciones l
-                        LEFT JOIN finanzas_licitacion f ON l.id = f.licitacion_id
-                        ORDER BY l.fecha_carga DESC
-                        """
-                    )
+                    # Admin ve TODAS las licitaciones, sin importar si tiene cliente_id o no
+                    if rol == "admin":
+                        cur.execute(
+                            """
+                            SELECT 
+                                ld.id, 
+                                ld.nombre, 
+                                COALESCE(lc.estado_interno, ld.estado) as estado,
+                                ld.fecha_carga, 
+                                ld.id_interno, 
+                                ld.estado_publicacion,
+                                NULL::numeric as presupuesto_referencial,
+                                NULL::text as moneda,
+                                (SELECT COUNT(id) FROM items_licitacion il WHERE il.licitacion_id = ld.id) as cantidad_items,
+                                0 as cantidad_homologados,
+                                ld.tipo_licitacion
+                            FROM licitaciones_descargadas ld
+                            LEFT JOIN licitaciones_clientes lc ON lc.licitacion_descargada_id = ld.id
+                            ORDER BY ld.fecha_carga DESC
+                            """
+                        )
+                    else:
+                        # Usuario cliente: solo ve su bandeja
+                        cur.execute(
+                            """
+                            SELECT 
+                                ld.id, 
+                                ld.nombre, 
+                                lc.estado_interno as estado, 
+                                ld.fecha_carga, 
+                                ld.id_interno, 
+                                ld.estado_publicacion,
+                                f.presupuesto_referencial,
+                                f.moneda,
+                                (SELECT COUNT(id) FROM items_licitacion il WHERE il.licitacion_id = ld.id) as cantidad_items,
+                                (SELECT COUNT(DISTINCT hp.item_key) 
+                                 FROM homologaciones_productos hp 
+                                 WHERE hp.licitacion_cliente_id = lc.id 
+                                   AND hp.candidato_seleccionado_id IS NOT NULL) as cantidad_homologados,
+                                ld.tipo_licitacion
+                            FROM licitaciones_clientes lc
+                            JOIN licitaciones_descargadas ld ON lc.licitacion_descargada_id = ld.id
+                            LEFT JOIN finanzas_licitacion f ON ld.id = f.licitacion_id
+                            WHERE lc.cliente_id = %s
+                            ORDER BY ld.fecha_carga DESC
+                            """,
+                            (cliente_id,)
+                        )
+                    
                     rows = cur.fetchall()
                     
                     licitaciones = []

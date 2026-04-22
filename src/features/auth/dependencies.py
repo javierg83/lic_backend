@@ -12,5 +12,7 @@ def auth_required(authorization: str = Header(default=None)):
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
 
     return {
-        "username": payload.get("sub")
+        "username": payload.get("sub"),
+        "rol": payload.get("rol"),
+        "cliente_id": payload.get("cliente_id")
     }

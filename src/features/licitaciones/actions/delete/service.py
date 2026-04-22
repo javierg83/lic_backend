@@ -20,13 +20,25 @@ class DeleteLicitacionService:
             with conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
                     # 1. Verificar si existe la licitación
-                    cur.execute("SELECT id FROM licitaciones WHERE id = %s", (licitacion_id,))
+                    cur.execute("SELECT id FROM licitaciones_descargadas WHERE id = %s", (licitacion_id,))
                     if not cur.fetchone():
                         return ApiResponse.fail(message="Licitación no encontrada", error="404")
 
-                    # 2. Borrar en Storage (archivos de gestion)
-                    cur.execute("SELECT ruta_archivo FROM gestion_licitacion_documentos WHERE gestion_id = %s", (licitacion_id,))
-                    rutas_documentos = [row['ruta_archivo'] for row in cur.fetchall() if row['ruta_archivo'] and not row['ruta_archivo'].startswith('http')]
+                    # 2. Borrar en Storage (archivos base y archivos de gestion)
+                    rutas_documentos = []
+                    
+                    # 2a. Archivos base descargados de MP
+                    cur.execute("SELECT ruta_almacenamiento FROM licitacion_archivos WHERE licitacion_id = %s", (licitacion_id,))
+                    rutas_documentos.extend([row['ruta_almacenamiento'] for row in cur.fetchall() if row['ruta_almacenamiento']])
+                    
+                    # 2b. Archivos subidos manualmente de gestion
+                    cur.execute("""
+                        SELECT gld.ruta_archivo 
+                        FROM gestion_licitacion_documentos gld
+                        JOIN gestion_licitaciones gl ON gl.id = gld.gestion_id
+                        WHERE gl.licitacion_id = %s
+                    """, (licitacion_id,))
+                    rutas_documentos.extend([row['ruta_archivo'] for row in cur.fetchall() if row['ruta_archivo'] and not row['ruta_archivo'].startswith('http')])
                     
                     if rutas_documentos and supabase_url and supabase_key:
                         from supabase import create_client, Client
@@ -90,15 +102,18 @@ class DeleteLicitacionService:
                         # Limpiar archivos base
                         cur.execute("DELETE FROM licitacion_archivos WHERE licitacion_id = %s", (licitacion_id,))
                         
+                        # Limpiar adjudicaciones ligadas que previenen el DELETE por ON DELETE NO ACTION
+                        cur.execute("DELETE FROM adjudicaciones_licitacion WHERE licitacion_id = %s", (licitacion_id,))
+                        
                         # Finalmente eliminar la licitacion
-                        cur.execute("DELETE FROM licitaciones WHERE id = %s", (licitacion_id,))
+                        cur.execute("DELETE FROM licitaciones_descargadas WHERE id = %s", (licitacion_id,))
                         
                         cur.execute("RELEASE SAVEPOINT pre_delete")
                     except Exception as db_cascade_error:
                         cur.execute("ROLLBACK TO SAVEPOINT pre_delete")
                         print(f"⚠️ Error intentando borrar manual en cascada, cayendo a DELETE normal: {db_cascade_error}")
                         # Intentar eliminar directamente (confiando en ON DELETE CASCADE)
-                        cur.execute("DELETE FROM licitaciones WHERE id = %s", (licitacion_id,))
+                        cur.execute("DELETE FROM licitaciones_descargadas WHERE id = %s", (licitacion_id,))
 
             return ApiResponse.ok(message="Licitación eliminada exitosamente")
 
