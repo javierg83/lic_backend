@@ -43,6 +43,21 @@ class AdminClienteService:
                         (new_id, '[]')
                     )
                     
+                    # Inicializar configuración de alertas
+                    cur.execute(
+                        "INSERT INTO cliente_configuracion (cliente_id) VALUES (%s)",
+                        (new_id,)
+                    )
+
+                    # Crear usuario inicial si se provee, o uno por defecto
+                    username = data.admin_username if data.admin_username else f"admin_{data.rut.replace('.', '').replace('-', '')}"
+                    password = data.admin_password if data.admin_password else "inicio2024"
+                    
+                    cur.execute(
+                        "INSERT INTO usuarios (username, password_hash, nombre_usuario, rol, cliente_id) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (username) DO NOTHING",
+                        (username, password, f"Admin {data.nombre}", 'cliente', new_id)
+                    )
+                    
             return ClienteResponse(
                 id=new_id,
                 nombre=data.nombre,
@@ -76,13 +91,57 @@ class AdminClienteService:
                     else:
                         palabras = val # Ya viene como lista (común en JSONB/psycopg2)
                 
+                # Obtener el primer usuario administrador asociado
+                cur.execute("SELECT username FROM usuarios WHERE cliente_id = %s AND rol = 'cliente' LIMIT 1", (cliente_id,))
+                user_row = cur.fetchone()
+                admin_username = user_row[0] if user_row else None
+                
+                # Obtener configuración
+                cur.execute("SELECT alerta_homologacion_umbral, alerta_homologacion_activa, correo_contacto FROM cliente_configuracion WHERE cliente_id = %s", (cliente_id,))
+                conf_row = cur.fetchone()
+                umbral = float(conf_row[0]) if conf_row and conf_row[0] is not None else 60.0
+                activa = conf_row[1] if conf_row and conf_row[1] is not None else True
+                correo = conf_row[2] if conf_row else None
+
                 return ClienteDetailResponse(
                     id=row[0],
                     nombre=row[1],
                     rut=row[2],
                     activo=row[3],
                     created_at=row[4],
-                    palabras_clave=palabras
+                    palabras_clave=palabras,
+                    admin_username=admin_username,
+                    alerta_homologacion_umbral=umbral,
+                    alerta_homologacion_activa=activa,
+                    correo_contacto=correo
                 )
+        finally:
+            conn.close()
+
+    @staticmethod
+    def update_user_password(username: str, new_password: str) -> bool:
+        conn = Database.get_connection()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE usuarios SET password_hash = %s WHERE username = %s",
+                        (new_password, username)
+                    )
+                    return cur.rowcount > 0
+        finally:
+            conn.close()
+
+    @staticmethod
+    def create_user_for_client(cliente_id: str, username: str, password: str, nombre: str) -> bool:
+        conn = Database.get_connection()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO usuarios (username, password_hash, nombre_usuario, rol, cliente_id) VALUES (%s, %s, %s, %s, %s)",
+                        (username, password, nombre, 'cliente', cliente_id)
+                    )
+                    return True
         finally:
             conn.close()

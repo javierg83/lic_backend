@@ -95,10 +95,14 @@ class LicitacionNewService:
                     licitacion_id_interno = row[1]
 
                     # Connect to Supabase
-                    from supabase import create_client, Client
+                    from supabase import create_client, Client, ClientOptions
                     supabase: Client | None = None
                     if supabase_url and supabase_key:
-                        supabase = create_client(supabase_url, supabase_key)
+                        supabase = create_client(
+                            supabase_url, 
+                            supabase_key,
+                            options=ClientOptions(storage_client_timeout=300, postgrest_client_timeout=120)
+                        )
 
                     # Insert Files
                     for i, file_data in enumerate(valid_files_data):
