@@ -16,7 +16,7 @@ async def upload_csv_productos(
     if user_data.get("rol") != "admin" and user_data.get("cliente_id") != cliente_id:
         raise HTTPException(status_code=403, detail="No tienes permisos para alterar el catálogo de otro cliente")
         
-    resultado = await ClienteProductosService.upload_csv(cliente_id, file)
+    resultado = await ClienteProductosService.upload_catalog(cliente_id, file)
     
     return ApiResponse.ok(
         data=resultado,

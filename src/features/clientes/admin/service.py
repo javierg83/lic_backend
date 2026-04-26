@@ -10,7 +10,13 @@ class AdminClienteService:
         clientes = []
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT id, nombre, rut, activo, created_at FROM clientes ORDER BY created_at DESC")
+                cur.execute("""
+                    SELECT c.id, c.nombre, c.rut, c.activo, c.created_at, 
+                           COALESCE(cc.alerta_homologacion_umbral, 60.0)
+                    FROM clientes c
+                    LEFT JOIN cliente_configuracion cc ON c.id = cc.cliente_id
+                    ORDER BY c.created_at DESC
+                """)
                 rows = cur.fetchall()
                 for row in rows:
                     clientes.append(ClienteResponse(
@@ -18,7 +24,8 @@ class AdminClienteService:
                         nombre=row[1],
                         rut=row[2],
                         activo=row[3],
-                        created_at=row[4]
+                        created_at=row[4],
+                        umbral=float(row[5])
                     ))
         finally:
             conn.close()
@@ -111,7 +118,7 @@ class AdminClienteService:
                     created_at=row[4],
                     palabras_clave=palabras,
                     admin_username=admin_username,
-                    alerta_homologacion_umbral=umbral,
+                    umbral=umbral,
                     alerta_homologacion_activa=activa,
                     correo_contacto=correo
                 )

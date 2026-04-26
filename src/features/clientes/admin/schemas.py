@@ -14,12 +14,12 @@ class ClienteCreate(ClienteBase):
 class ClienteResponse(ClienteBase):
     id: str
     created_at: Optional[datetime] = None
+    umbral: float = 60.0
 
     model_config = ConfigDict(from_attributes=True)
 
 class ClienteDetailResponse(ClienteResponse):
     palabras_clave: List[str] = []
     admin_username: Optional[str] = None
-    alerta_homologacion_umbral: float = 60.0
     alerta_homologacion_activa: bool = True
     correo_contacto: Optional[str] = None
