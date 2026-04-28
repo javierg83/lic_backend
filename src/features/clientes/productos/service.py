@@ -176,3 +176,29 @@ class ClienteProductosService:
             raise HTTPException(status_code=500, detail="Error al intentar escribir en la base de datos.")
         finally:
             conn.close()
+
+    @staticmethod
+    async def get_products_by_client(cliente_id: str) -> List[dict]:
+        conn = Database.get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, codigo, nombre_producto, descripcion, precio_referencial 
+                    FROM cliente_productos 
+                    WHERE cliente_id = %s 
+                    ORDER BY created_at DESC
+                """, (cliente_id,))
+                rows = cur.fetchall()
+                
+                productos = []
+                for row in rows:
+                    productos.append({
+                        "id": str(row[0]),
+                        "codigo": row[1],
+                        "nombre_producto": row[2],
+                        "descripcion": row[3],
+                        "precio_referencial": float(row[4]) if row[4] is not None else None
+                    })
+                return productos
+        finally:
+            conn.close()

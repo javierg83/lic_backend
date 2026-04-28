@@ -1,10 +1,23 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
+from typing import List
 from src.core.responses import ApiResponse
 from src.features.auth.dependencies import auth_required
 from .service import ClienteProductosService
-from .schemas import UploadProductosResponse
+from .schemas import UploadProductosResponse, ProductoResponse
 
 router = APIRouter()
+
+@router.get("/{cliente_id}/productos", response_model=ApiResponse[List[ProductoResponse]])
+async def list_productos(
+    cliente_id: str,
+    user_data: dict = Depends(auth_required)
+):
+    # Verificación de seguridad (mismo criterio que upload)
+    if user_data.get("rol") != "admin" and user_data.get("cliente_id") != cliente_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para ver el catálogo de otro cliente")
+        
+    resultado = await ClienteProductosService.get_products_by_client(cliente_id)
+    return ApiResponse.ok(data=resultado)
 
 @router.post("/{cliente_id}/productos/upload_csv", response_model=ApiResponse[UploadProductosResponse])
 async def upload_csv_productos(

@@ -109,6 +109,10 @@ class AdminClienteService:
                 umbral = float(conf_row[0]) if conf_row and conf_row[0] is not None else 60.0
                 activa = conf_row[1] if conf_row and conf_row[1] is not None else True
                 correo = conf_row[2] if conf_row else None
+                
+                # Obtener total de productos
+                cur.execute("SELECT COUNT(*) FROM cliente_productos WHERE cliente_id = %s", (cliente_id,))
+                total_productos = cur.fetchone()[0]
 
                 return ClienteDetailResponse(
                     id=row[0],
@@ -120,7 +124,8 @@ class AdminClienteService:
                     admin_username=admin_username,
                     umbral=umbral,
                     alerta_homologacion_activa=activa,
-                    correo_contacto=correo
+                    correo_contacto=correo,
+                    total_productos=total_productos
                 )
         finally:
             conn.close()

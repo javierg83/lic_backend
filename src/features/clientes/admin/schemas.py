@@ -23,3 +23,4 @@ class ClienteDetailResponse(ClienteResponse):
     admin_username: Optional[str] = None
     alerta_homologacion_activa: bool = True
     correo_contacto: Optional[str] = None
+    total_productos: int = 0
